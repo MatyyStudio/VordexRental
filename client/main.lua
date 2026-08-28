@@ -1,4 +1,4 @@
-lib.locale() -- Tento řádek opravuje ten error. Načítá překlady z locales/cs.json
+lib.locale() -- Load translations (fixes the issue with unloaded menu)
 
 local rentedVehicle = nil
 local isRenting = false
@@ -6,12 +6,14 @@ local rentalTimer = 0
 local currentPlate = ""
 local currentDeposit = 0
 local basePricePerMin = 0
-local spawnedPeds = {} -- Tabulka pro uložení NPC, aby se dala smazat při restartu
+local spawnedPeds = {} -- Table to store NPCs so they can be deleted on resource stop
 
--- Inicializace NPC a Blipů při startu
+-- ==========================================
+-- INITIALIZATION (Blips, NPCs, Zones)
+-- ==========================================
 CreateThread(function()
     for i, v in ipairs(Config.Locations) do
-        -- 1. Vytvoření blipu na mapě
+        -- 1. Create map blip
         if v.blip.enabled then
             local blip = AddBlipForCoord(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z)
             SetBlipSprite(blip, v.blip.sprite)
@@ -24,7 +26,7 @@ CreateThread(function()
             EndTextCommandSetBlipName(blip)
         end
 
-        -- 2. Načtení a spawn NPC
+        -- 2. Load model and spawn NPC
         RequestModel(v.pedModel)
         while not HasModelLoaded(v.pedModel) do 
             Wait(10) 
@@ -36,10 +38,10 @@ CreateThread(function()
         SetBlockingOfNonTemporaryEvents(ped, true)
         table.insert(spawnedPeds, ped)
 
-        -- 3. Krátká pauza, aby se entita bezpečně zapsala do hry před přidáním targetu
+        -- 3. Short pause to safely register the entity in the game before adding the target
         Wait(200)
 
-        -- 4. Přidání targetu na NPC
+        -- 4. Add target to NPC using SphereZone for maximum reliability
         exports.ox_target:addLocalEntity(ped, {
             {
                 name = 'vordex_rental_npc_' .. i,
@@ -50,12 +52,12 @@ CreateThread(function()
                     OpenRentalMainMenu(v)
                 end,
                 canInteract = function()
-                    return not isRenting -- NPC komunikuje jen pokud hráč zrovna nemá auto
+                    return not isRenting -- NPC only interacts if the player is not currently renting a vehicle
                 end
             }
         })
 
-        -- 5. Návratová zóna (kde se auto vrací)
+        -- 5. Return zone (where the vehicle is returned)
         exports.ox_target:addBoxZone({
             coords = v.returnZone,
             size = vec3(v.returnRadius, v.returnRadius, 3.0),
@@ -79,7 +81,7 @@ CreateThread(function()
     end
 end)
 
--- Smazání NPC při vypnutí/restartu scriptu
+-- Delete NPCs on script stop/restart to prevent duplicates
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() == resourceName then
         for _, ped in ipairs(spawnedPeds) do
@@ -91,10 +93,8 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 -- ==========================================
--- LOGIKA MENU
+-- MENU LOGIC
 -- ==========================================
-
--- Hlavní menu (Kategorie)
 function OpenRentalMainMenu(locationData)
     local options = {}
 
@@ -117,7 +117,6 @@ function OpenRentalMainMenu(locationData)
     lib.showContext('vordex_rental_main')
 end
 
--- Seznam vozidel v kategorii
 function OpenCategoryMenu(category, locationData)
     local options = {}
 
@@ -143,10 +142,8 @@ function OpenCategoryMenu(category, locationData)
 end
 
 -- ==========================================
--- LOGIKA PŮJČENÍ A SPAWNU
+-- RENTAL AND SPAWN LOGIC
 -- ==========================================
-
--- Proces půjčení (Čas a Platba)
 function StartRentingProcess(vehicleData, locationData)
     local input = lib.inputDialog(locale('time_input_title'), {
         {
@@ -172,7 +169,7 @@ function StartRentingProcess(vehicleData, locationData)
     local minutes = input[1]
     local payMethod = input[2]
 
-    -- Callback na server pro zaplacení
+    -- Server callback for payment processing
     lib.callback('vordex_rental:pay', false, function(success, plate)
         if success then
             SpawnRentalVehicle(vehicleData.model, locationData.vehicleSpawn, plate)
@@ -184,13 +181,12 @@ function StartRentingProcess(vehicleData, locationData)
     end, minutes, vehicleData.pricePerMinute, vehicleData.deposit, payMethod)
 end
 
--- Spawn vozidla
 function SpawnRentalVehicle(model, coords, plate)
     local hash = GetHashKey(model)
     RequestModel(hash)
     while not HasModelLoaded(hash) do Wait(0) end
 
-    -- Zajištění, že se auto nespawne v jiném autě
+    -- Ensure the vehicle doesn't spawn inside another vehicle
     ClearAreaOfVehicles(coords.x, coords.y, coords.z, 3.0, false, false, false, false, false)
 
     rentedVehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, coords.w, true, false)
@@ -200,13 +196,12 @@ function SpawnRentalVehicle(model, coords, plate)
     TaskWarpPedIntoVehicle(PlayerPedId(), rentedVehicle, -1)
     SetEntityAsMissionEntity(rentedVehicle, true, true)
     
-    -- Pokud používáš qb-vehiclekeys, cd_garage nebo jiné klíče, dej export sem.
+    -- If you use qb-vehiclekeys, cd_garage or other key scripts, put the export here.
 end
 
 -- ==========================================
--- LOGIKA ODPOČTU ČASU A PENALIZACE
+-- TIME COUNTDOWN AND PENALTY LOGIC
 -- ==========================================
-
 function StartRentalTimer(minutes, deposit, pricePerMin, lastPayMethod)
     isRenting = true
     rentalTimer = minutes * 60
@@ -223,12 +218,12 @@ function StartRentalTimer(minutes, deposit, pricePerMin, lastPayMethod)
             local secs = rentalTimer % 60
             lib.showTextUI(locale('ui_time_left', string.format("%02d:%02d", mins, secs), currentPlate))
 
-            -- Varování 1 min před koncem
+            -- Warning 1 minute before expiration
             if rentalTimer == 60 then
                 lib.notify({ title = locale('menu_title'), description = locale('notify_time_warning'), type = 'warning', duration = 5000 })
             end
 
-            -- Čas vypršel
+            -- Time expired
             if rentalTimer <= 0 then
                 HandleExpiration(lastPayMethod)
                 break
@@ -238,14 +233,13 @@ function StartRentalTimer(minutes, deposit, pricePerMin, lastPayMethod)
     end)
 end
 
--- Konec času (Penalizace nebo odebrání)
 function HandleExpiration(payMethod)
     local ped = PlayerPedId()
     local veh = GetVehiclePedIsIn(ped, false)
     local penaltyPrice = math.floor((basePricePerMin * Config.ExtensionTime) * Config.PenaltyMultiplier)
 
     if veh == rentedVehicle and rentedVehicle ~= 0 then
-        -- Hráč je ve vozidle
+        -- Player is inside the vehicle
         SetVehicleEngineOn(rentedVehicle, false, true, true)
         
         local alert = lib.alertDialog({
@@ -260,12 +254,12 @@ function HandleExpiration(payMethod)
         })
 
         if alert == 'confirm' then
-            -- Pokus o prodloužení
+            -- Attempt to extend time
             lib.callback('vordex_rental:extend', false, function(success)
                 if success then
                     rentalTimer = Config.ExtensionTime * 60
                     SetVehicleEngineOn(rentedVehicle, true, true, false)
-                    -- Odpočet jede dál
+                    -- Countdown continues
                     StartRentalTimer(Config.ExtensionTime, currentDeposit, basePricePerMin, payMethod)
                 else
                     lib.notify({ title = locale('menu_title'), description = locale('notify_no_money'), type = 'error' })
@@ -276,7 +270,7 @@ function HandleExpiration(payMethod)
             ForceRemoveVehicle()
         end
     else
-        -- Hráč není ve vozidle - rovnou smazat
+        -- Player is not in the vehicle - force delete
         ForceRemoveVehicle()
     end
 end
@@ -292,13 +286,13 @@ function ForceRemoveVehicle()
 end
 
 -- ==========================================
--- VRÁCENÍ VOZIDLA
+-- VEHICLE RETURN (Damage and time calculation)
 -- ==========================================
-
 function ReturnVehicle()
     local health = GetVehicleBodyHealth(rentedVehicle)
     local damageMultiplier = 0.0
 
+    -- 1. Damage calculation (deposit deduction)
     if health < Config.DamageSettings.threshold then
         local damageTaken = Config.DamageSettings.threshold - health
         damageMultiplier = (damageTaken / Config.DamageSettings.threshold) * Config.DamageSettings.maxDepositLoss
@@ -308,16 +302,44 @@ function ReturnVehicle()
     end
 
     local lostDeposit = math.floor(currentDeposit * damageMultiplier)
-    local refundAmount = currentDeposit - lostDeposit
+    local depositRefund = currentDeposit - lostDeposit
 
+    -- 2. Early return calculation (time penalty)
+    local timeRefund = 0
+    local remainingMinutes = math.floor(rentalTimer / 60)
+    
+    if remainingMinutes > 0 then
+        -- Calculate the value of unused time
+        local unusedTimeValue = remainingMinutes * basePricePerMin
+        -- Refund only a portion to the player based on config
+        timeRefund = math.floor(unusedTimeValue * Config.EarlyReturnRefund)
+    end
+
+    -- Total refund amount
+    local totalRefund = depositRefund + timeRefund
+
+    -- 3. Send to server and display notification
     lib.callback('vordex_rental:refund', false, function(success)
         if success then
-            if lostDeposit > 0 then
-                lib.notify({ title = locale('menu_title'), description = locale('notify_returned_dmg', refundAmount, lostDeposit), type = 'info' })
-            else
-                lib.notify({ title = locale('menu_title'), description = locale('notify_returned_full', refundAmount), type = 'success' })
+            -- Build a clear notification message for the player
+            local desc = locale('notify_return_deposit', depositRefund)
+            
+            if timeRefund > 0 then
+                desc = desc .. "\n" .. locale('notify_return_time', timeRefund)
             end
+            
+            if lostDeposit > 0 then
+                desc = desc .. "\n" .. locale('notify_return_dmg_fee', lostDeposit)
+            end
+
+            lib.notify({ 
+                title = locale('menu_return'), 
+                description = desc, 
+                type = lostDeposit > 0 and 'warning' or 'success',
+                duration = 7000
+            })
+            
             ForceRemoveVehicle()
         end
-    end, refundAmount)
+    end, totalRefund)
 end

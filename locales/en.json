@@ -19,5 +19,8 @@
     "notify_no_money": "You don't have enough money!",
     "notify_time_warning": "Warning: Only 1 minute left on your rental!",
     "target_npc": "Talk to Rental Agent",
-    "target_return": "Return Rented Vehicle"
+    "target_return": "Return Rented Vehicle",
+    "notify_return_deposit": "Deposit refunded: $%s",
+    "notify_return_time": "Refund for unused time: $%s",
+    "notify_return_dmg_fee": "Damage fee deducted: $%s"
 }

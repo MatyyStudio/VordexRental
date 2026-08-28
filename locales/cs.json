@@ -19,5 +19,8 @@
     "notify_no_money": "Nemáš dostatek peněz!",
     "notify_time_warning": "Varování: Zbývá ti poslední minuta pronájmu!",
     "target_npc": "Otevřít půjčovnu",
-    "target_return": "Vrátit půjčené vozidlo"
+    "target_return": "Vrátit půjčené vozidlo",
+    "notify_return_deposit": "Vrácená kauce: $%s",
+    "notify_return_time": "Vráceno za nevyužitý čas: $%s",
+    "notify_return_dmg_fee": "Strženo za poškození: $%s"
 }

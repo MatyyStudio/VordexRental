@@ -8,6 +8,7 @@ Config.MoneyAccount = 'bank' -- 'cash' or 'bank'
 Config.PlatePrefix = 'RENT' -- Max 4 characters recommended
 Config.PenaltyMultiplier = 2.0 -- How much more it costs to extend when time expires (e.g., 2.0 = double the normal price)
 Config.ExtensionTime = 10 -- How many minutes the penalty extension gives
+Config.EarlyReturnRefund = 0.5 -- How much of the money for the unused time will be refunded (0.5 = 50%; the remainder is a penalty for early return)
 
 Config.TimeLimits = {
     min = 5,
