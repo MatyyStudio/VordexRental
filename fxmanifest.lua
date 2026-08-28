@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Vordex Scripts'
 description 'Advanced Vehicle Rental System'
-version '1.0.0'
+version '1.1.0'
 
 shared_scripts {
     '@ox_lib/init.lua',

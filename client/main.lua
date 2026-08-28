@@ -4,10 +4,11 @@ local rentalTimer = 0
 local currentPlate = ""
 local currentDeposit = 0
 local basePricePerMin = 0
+local spawnedPeds = {} -- Tabulka pro smazání NPC při restartu scriptu
 
 -- Inicializace NPC a Blipů při startu
 CreateThread(function()
-    for k, v in pairs(Config.Locations) do
+    for i, v in ipairs(Config.Locations) do
         -- Blip
         if v.blip.enabled then
             local blip = AddBlipForCoord(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z)
@@ -29,23 +30,29 @@ CreateThread(function()
         FreezeEntityPosition(ped, true)
         SetEntityInvincible(ped, true)
         SetBlockingOfNonTemporaryEvents(ped, true)
+        table.insert(spawnedPeds, ped) -- Uložíme peda pro pozdější smazání
 
-        -- ox_target interaction na NPC
-        exports.ox_target:addLocalEntity(ped, {
-            {
-                name = 'vordex_rental_npc',
-                icon = 'fas fa-car-side',
-                label = locale('target_npc'),
-                onSelect = function()
-                    OpenRentalMainMenu(v)
-                end,
-                canInteract = function()
-                    return not isRenting -- NPC komunikuje jen pokud hráč zrovna nemá půjčené vozidlo
-                end
+        -- OPRAVA: Místo addLocalEntity používáme SphereZone kolem NPC (100% spolehlivost)
+        exports.ox_target:addSphereZone({
+            coords = vec3(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z),
+            radius = 1.0, -- Zóna velká 1 metr kolem NPC
+            debug = false,
+            options = {
+                {
+                    name = 'vordex_rental_npc_' .. i,
+                    icon = 'fas fa-car-side',
+                    label = locale('target_npc'),
+                    onSelect = function()
+                        OpenRentalMainMenu(v)
+                    end,
+                    canInteract = function()
+                        return not isRenting -- NPC komunikuje jen pokud hráč nemá půjčené auto
+                    end
+                }
             }
         })
 
-        -- Návratová zóna (BoxZone)
+        -- Návratová zóna (BoxZone) pro každou lokaci
         exports.ox_target:addBoxZone({
             coords = v.returnZone,
             size = vec3(v.returnRadius, v.returnRadius, 3.0),
@@ -53,7 +60,7 @@ CreateThread(function()
             debug = false,
             options = {
                 {
-                    name = 'vordex_rental_return',
+                    name = 'vordex_rental_return_' .. i,
                     icon = 'fas fa-undo',
                     label = locale('target_return'),
                     onSelect = function()
@@ -68,10 +75,20 @@ CreateThread(function()
     end
 end)
 
+-- Smazání NPC při vypnutí/restartu scriptu
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        for _, ped in ipairs(spawnedPeds) do
+            if DoesEntityExist(ped) then
+                DeleteEntity(ped)
+            end
+        end
+    end
+end)
+
 -- Hlavní menu (Kategorie)
 function OpenRentalMainMenu(locationData)
     local options = {}
-
     for catKey, catData in pairs(Config.Vehicles) do
         table.insert(options, {
             title = locale(catData.label),
@@ -81,20 +98,13 @@ function OpenRentalMainMenu(locationData)
             end
         })
     end
-
-    lib.registerContext({
-        id = 'vordex_rental_main',
-        title = locale('menu_title'),
-        options = options
-    })
-
+    lib.registerContext({ id = 'vordex_rental_main', title = locale('menu_title'), options = options })
     lib.showContext('vordex_rental_main')
 end
 
 -- Seznam vozidel v kategorii
 function OpenCategoryMenu(category, locationData)
     local options = {}
-
     for _, veh in ipairs(Config.Vehicles[category].list) do
         table.insert(options, {
             title = veh.label,
@@ -105,44 +115,21 @@ function OpenCategoryMenu(category, locationData)
             end
         })
     end
-
-    lib.registerContext({
-        id = 'vordex_rental_category',
-        title = locale(Config.Vehicles[category].label),
-        menu = 'vordex_rental_main',
-        options = options
-    })
-
+    lib.registerContext({ id = 'vordex_rental_category', title = locale(Config.Vehicles[category].label), menu = 'vordex_rental_main', options = options })
     lib.showContext('vordex_rental_category')
 end
 
 -- Proces půjčení (Čas a Platba)
 function StartRentingProcess(vehicleData, locationData)
     local input = lib.inputDialog(locale('time_input_title'), {
-        {
-            type = 'number', 
-            label = locale('time_input_label', Config.TimeLimits.min, Config.TimeLimits.max), 
-            required = true, 
-            min = Config.TimeLimits.min, 
-            max = Config.TimeLimits.max
-        },
-        {
-            type = 'select', 
-            label = locale('pay_method_label'), 
-            required = true, 
-            options = {
-                { value = 'cash', label = locale('pay_cash') },
-                { value = 'bank', label = locale('pay_bank') }
-            }
-        }
+        { type = 'number', label = locale('time_input_label', Config.TimeLimits.min, Config.TimeLimits.max), required = true, min = Config.TimeLimits.min, max = Config.TimeLimits.max },
+        { type = 'select', label = locale('pay_method_label'), required = true, options = { { value = 'cash', label = locale('pay_cash') }, { value = 'bank', label = locale('pay_bank') } } }
     })
-
     if not input then return end
 
     local minutes = input[1]
     local payMethod = input[2]
 
-    -- Callback na server pro zaplacení
     lib.callback('vordex_rental:pay', false, function(success, plate)
         if success then
             SpawnRentalVehicle(vehicleData.model, locationData.vehicleSpawn, plate)
@@ -160,6 +147,9 @@ function SpawnRentalVehicle(model, coords, plate)
     RequestModel(hash)
     while not HasModelLoaded(hash) do Wait(0) end
 
+    -- Zajištění, že se auto nespawne v jiném autě
+    ClearAreaOfVehicles(coords.x, coords.y, coords.z, 3.0, false, false, false, false, false)
+
     rentedVehicle = CreateVehicle(hash, coords.x, coords.y, coords.z, coords.w, true, false)
     SetVehicleNumberPlateText(rentedVehicle, plate)
     currentPlate = plate
@@ -167,7 +157,8 @@ function SpawnRentalVehicle(model, coords, plate)
     TaskWarpPedIntoVehicle(PlayerPedId(), rentedVehicle, -1)
     SetEntityAsMissionEntity(rentedVehicle, true, true)
     
-    -- Odemknutí klíčů (Pokud používáš např. qb-vehiclekeys nebo ox_ignition, přidej export zde)
+    -- Tady případně přidej export na klíče podle tvého serveru
+    -- např.: TriggerEvent("vehiclekeys:client:SetOwner", plate)
 end
 
 -- Logika odpočtu času
@@ -182,17 +173,14 @@ function StartRentalTimer(minutes, deposit, pricePerMin, lastPayMethod)
             Wait(1000)
             rentalTimer = rentalTimer - 1
             
-            -- Format UI
             local mins = math.floor(rentalTimer / 60)
             local secs = rentalTimer % 60
             lib.showTextUI(locale('ui_time_left', string.format("%02d:%02d", mins, secs), currentPlate))
 
-            -- Varování 1 min před koncem
             if rentalTimer == 60 then
                 lib.notify({ title = locale('menu_title'), description = locale('notify_time_warning'), type = 'warning', duration = 5000 })
             end
 
-            -- Čas vypršel
             if rentalTimer <= 0 then
                 HandleExpiration(lastPayMethod)
                 break
@@ -209,7 +197,6 @@ function HandleExpiration(payMethod)
     local penaltyPrice = math.floor((basePricePerMin * Config.ExtensionTime) * Config.PenaltyMultiplier)
 
     if veh == rentedVehicle and rentedVehicle ~= 0 then
-        -- Hráč je ve vozidle
         SetVehicleEngineOn(rentedVehicle, false, true, true)
         
         local alert = lib.alertDialog({
@@ -224,12 +211,10 @@ function HandleExpiration(payMethod)
         })
 
         if alert == 'confirm' then
-            -- Pokus o prodloužení
             lib.callback('vordex_rental:extend', false, function(success)
                 if success then
                     rentalTimer = Config.ExtensionTime * 60
                     SetVehicleEngineOn(rentedVehicle, true, true, false)
-                    -- Timer continues (isRenting is still true)
                     StartRentalTimer(Config.ExtensionTime, currentDeposit, basePricePerMin, payMethod)
                 else
                     lib.notify({ title = locale('menu_title'), description = locale('notify_no_money'), type = 'error' })
@@ -240,7 +225,6 @@ function HandleExpiration(payMethod)
             ForceRemoveVehicle()
         end
     else
-        -- Hráč není ve vozidle - rovnou smazat
         ForceRemoveVehicle()
     end
 end
@@ -255,7 +239,7 @@ function ForceRemoveVehicle()
     currentPlate = ""
 end
 
--- Vrácení vozidla přes target
+-- Vrácení vozidla
 function ReturnVehicle()
     local health = GetVehicleBodyHealth(rentedVehicle)
     local damageMultiplier = 0.0

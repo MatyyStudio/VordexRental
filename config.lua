@@ -23,26 +23,41 @@ Config.DamageSettings = {
 
 -- | Locations | --
 Config.Locations = {
+    -- 1. Legion Square (Centrum)
     {
-        -- NPC spawn location
-        pedCoords = vector4(-239.04, -987.05, 29.28, 160.5),
+        pedCoords = vector4(163.11, -1004.59, 29.35, 340.0),
         pedModel = `a_m_y_business_02`,
-        
-        -- Where the rented vehicle will spawn
-        vehicleSpawn = vector4(-241.0, -985.0, 29.28, 160.0),
-        
-        -- Where to return the vehicle (zone radius)
-        returnZone = vector3(-241.0, -985.0, 29.28),
+        vehicleSpawn = vector4(160.0, -1000.0, 29.3, 340.0),
+        returnZone = vector3(160.0, -1000.0, 29.3),
         returnRadius = 5.0,
-        
-        -- Blip settings
-        blip = {
-            enabled = true,
-            sprite = 524,
-            color = 2,
-            scale = 0.8,
-            label = "Vehicle Rental"
-        }
+        blip = { enabled = true, sprite = 524, color = 2, scale = 0.8, label = "Půjčovna - Centrum" }
+    },
+    -- 2. Letiště (Los Santos International)
+    {
+        pedCoords = vector4(-1034.6, -2733.6, 20.16, 330.0),
+        pedModel = `a_m_y_business_02`,
+        vehicleSpawn = vector4(-1030.0, -2730.0, 20.1, 330.0),
+        returnZone = vector3(-1030.0, -2730.0, 20.1),
+        returnRadius = 5.0,
+        blip = { enabled = true, sprite = 524, color = 2, scale = 0.8, label = "Půjčovna - Letiště" }
+    },
+    -- 3. Sandy Shores
+    {
+        pedCoords = vector4(1966.1, 3744.1, 32.2, 30.0),
+        pedModel = `a_m_m_hillbilly_01`, -- Lokální redneck NPC
+        vehicleSpawn = vector4(1960.0, 3750.0, 32.2, 30.0),
+        returnZone = vector3(1960.0, 3750.0, 32.2),
+        returnRadius = 5.0,
+        blip = { enabled = true, sprite = 524, color = 2, scale = 0.8, label = "Půjčovna - Sandy Shores" }
+    },
+    -- 4. Paleto Bay
+    {
+        pedCoords = vector4(-117.5, 6461.5, 31.5, 45.0),
+        pedModel = `a_m_y_business_02`,
+        vehicleSpawn = vector4(-110.0, 6465.0, 31.5, 45.0),
+        returnZone = vector3(-110.0, 6465.0, 31.5),
+        returnRadius = 5.0,
+        blip = { enabled = true, sprite = 524, color = 2, scale = 0.8, label = "Půjčovna - Paleto Bay" }
     }
 }
 
