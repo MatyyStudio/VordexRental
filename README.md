@@ -32,11 +32,11 @@ Ensure you have the following resources installed and running on your server bef
 ## 🚀 Installation
 
 1. Download the latest release from the repository.
-2. Extract the folder and ensure it is named `vordex_rental`.
-3. Place the `vordex_rental` folder into your server's `resources` directory.
+2. Extract the folder and ensure it is named `VordexRental`.
+3. Place the `VordexRental` folder into your server's `resources` directory.
 4. Add the following line to your `server.cfg`:
 
 ```cfg
 ensure ox_lib
 ensure ox_target
-ensure vordex_rental
+ensure VordexRental
