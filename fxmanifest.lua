@@ -3,12 +3,15 @@ game 'gta5'
 
 author 'Vordex'
 description 'Advanced Vehicle Rental System'
-version '1.3.0'
+version '1.3.5'
 
--- Tohle zajistí, že script spadne/upozorní, pokud ox_target neběží
 dependencies {
     'ox_lib',
     'ox_target'
+}
+
+files {
+    'locales/*.json'
 }
 
 shared_scripts {
