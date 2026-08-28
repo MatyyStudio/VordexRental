@@ -5,6 +5,9 @@
     "menu_return": "Return Vehicle",
     "time_input_title": "Rental Duration",
     "time_input_label": "Minutes (Min: %s, Max: %s)",
+    "pay_method_label": "Payment Method",
+    "pay_cash": "Cash",
+    "pay_bank": "Bank Card",
     "ui_time_left": "Time Left: %s | Plate: %s",
     "alert_expired_title": "Rental Time Expired!",
     "alert_expired_desc": "Your rental period has ended. The engine has been disabled.",
@@ -16,8 +19,5 @@
     "notify_no_money": "You don't have enough money!",
     "notify_time_warning": "Warning: Only 1 minute left on your rental!",
     "target_npc": "Talk to Rental Agent",
-    "pay_method_label": "Payment Method",
-    "pay_cash": "Cash",
-    "pay_bank": "Bank Card",
     "target_return": "Return Rented Vehicle"
 }
