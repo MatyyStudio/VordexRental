@@ -22,5 +22,6 @@
     "target_return": "Vrátit půjčené vozidlo",
     "notify_return_deposit": "Vrácená kauce: $%s",
     "notify_return_time": "Vráceno za nevyužitý čas: $%s",
-    "notify_return_dmg_fee": "Strženo za poškození: $%s"
+    "notify_return_dmg_fee": "Strženo za poškození: $%s",
+    "blip_rented_vehicle": "Půjčené vozidlo"
 }

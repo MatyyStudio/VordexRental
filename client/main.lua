@@ -1,6 +1,7 @@
 lib.locale() -- Load translations (fixes the issue with unloaded menu)
 
 local rentedVehicle = nil
+local vehicleBlip = nil -- Variable to store the player's personal vehicle blip
 local isRenting = false
 local rentalTimer = 0
 local currentPlate = ""
@@ -13,7 +14,7 @@ local spawnedPeds = {} -- Table to store NPCs so they can be deleted on resource
 -- ==========================================
 CreateThread(function()
     for i, v in ipairs(Config.Locations) do
-        -- 1. Create map blip
+        -- 1. Create map blip for rental station
         if v.blip.enabled then
             local blip = AddBlipForCoord(v.pedCoords.x, v.pedCoords.y, v.pedCoords.z)
             SetBlipSprite(blip, v.blip.sprite)
@@ -195,6 +196,15 @@ function SpawnRentalVehicle(model, coords, plate)
     
     TaskWarpPedIntoVehicle(PlayerPedId(), rentedVehicle, -1)
     SetEntityAsMissionEntity(rentedVehicle, true, true)
+
+    -- Create a personal tracking blip attached to the rented vehicle
+    vehicleBlip = AddBlipForEntity(rentedVehicle)
+    SetBlipSprite(vehicleBlip, 225) -- 225 represents a standard car icon
+    SetBlipColour(vehicleBlip, 3)   -- 3 is blue color
+    SetBlipScale(vehicleBlip, 0.75)
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(locale('blip_rented_vehicle'))
+    EndTextCommandSetBlipName(vehicleBlip)
     
     -- If you use qb-vehiclekeys, cd_garage or other key scripts, put the export here.
 end
@@ -277,10 +287,19 @@ end
 
 function ForceRemoveVehicle()
     isRenting = false
+    
+    -- Remove the personal map blip if it exists
+    if vehicleBlip and DoesBlipExist(vehicleBlip) then
+        RemoveBlip(vehicleBlip)
+        vehicleBlip = nil
+    end
+
+    -- Delete the vehicle entity server-side
     if DoesEntityExist(rentedVehicle) then
         local netId = NetworkGetNetworkIdFromEntity(rentedVehicle)
         TriggerServerEvent('vordex_rental:deleteVehicle', netId)
     end
+    
     rentedVehicle = nil
     currentPlate = ""
 end

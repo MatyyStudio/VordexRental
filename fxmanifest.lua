@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Vordex'
 description 'Advanced Vehicle Rental System'
-version '1.4.0'
+version '1.4.5'
 
 dependencies {
     'ox_lib',
