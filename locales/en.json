@@ -1,0 +1,23 @@
+{
+    "menu_title": "Vehicle Rental",
+    "menu_bikes": "Bicycles",
+    "menu_cars": "Cars",
+    "menu_return": "Return Vehicle",
+    "time_input_title": "Rental Duration",
+    "time_input_label": "Minutes (Min: %s, Max: %s)",
+    "ui_time_left": "Time Left: %s | Plate: %s",
+    "alert_expired_title": "Rental Time Expired!",
+    "alert_expired_desc": "Your rental period has ended. The engine has been disabled.",
+    "btn_extend": "Extend (+10 min) for $%s",
+    "btn_leave": "Leave & Lose Deposit",
+    "notify_rented": "You rented a %s for %s minutes. Deposit: $%s",
+    "notify_returned_full": "Vehicle returned! Full deposit of $%s refunded.",
+    "notify_returned_dmg": "Vehicle returned. Deposit refunded: $%s (Damage fee: $%s)",
+    "notify_no_money": "You don't have enough money!",
+    "notify_time_warning": "Warning: Only 1 minute left on your rental!",
+    "target_npc": "Talk to Rental Agent",
+    "pay_method_label": "Payment Method",
+    "pay_cash": "Cash",
+    "pay_bank": "Bank Card",
+    "target_return": "Return Rented Vehicle"
+}

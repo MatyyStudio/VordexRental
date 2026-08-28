@@ -1,0 +1,23 @@
+{
+    "menu_title": "Půjčovna vozidel",
+    "menu_bikes": "Jízdní kola",
+    "menu_cars": "Osobní auta",
+    "menu_return": "Vrátit vozidlo",
+    "time_input_title": "Doba pronájmu",
+    "time_input_label": "Minuty (Min: %s, Max: %s)",
+    "ui_time_left": "Zbývá: %s | SPZ: %s",
+    "alert_expired_title": "Čas pronájmu vypršel!",
+    "alert_expired_desc": "Tvůj zaplacený čas vypršel. Motor byl zablokován.",
+    "btn_extend": "Prodloužit (+10 min) za $%s",
+    "btn_leave": "Opustit a přijít o kauci",
+    "notify_rented": "Půjčil sis %s na %s minut. Kauce: $%s",
+    "notify_returned_full": "Vozidlo vráceno! Plná kauce $%s ti byla vyplacena.",
+    "notify_returned_dmg": "Vozidlo vráceno. Vrácená kauce: $%s (Strženo za poškození: $%s)",
+    "notify_no_money": "Nemáš dostatek peněz!",
+    "notify_time_warning": "Varování: Zbývá ti poslední minuta pronájmu!",
+    "target_npc": "Otevřít půjčovnu",
+    "pay_method_label": "Způsob platby",
+    "pay_cash": "Hotovost",
+    "pay_bank": "Platební karta",
+    "target_return": "Vrátit půjčené vozidlo"
+}
